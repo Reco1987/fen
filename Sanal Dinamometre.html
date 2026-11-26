@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="tr" data-mode="earth">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sanal Dinamometre</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root[data-mode="earth"]{--bg:linear-gradient(#bfe3ff,#eaf6ff);--card:#ffffffee;--text:#16202e;--muted:#5b6778;--line:#cfd9e6;--accent:#1f66e5;--btn:#eef3fa;color-scheme:light}
+:root[data-mode="moon"]{--bg:linear-gradient(#03040a,#171a2b);--card:#10131fee;--text:#eef1f7;--muted:#9aa4b8;--line:#2a3050;--accent:#8fb0ff;--btn:#1a1f33;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px);min-height:100%}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:16px}
+.wrap{max-width:920px;margin:0 auto;display:grid;gap:16px;grid-template-columns:1fr 1fr}
+@media(max-width:700px){.wrap{grid-template-columns:1fr}}
+h1{font-size:1.4rem;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 12px;font-size:.9rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.modes{display:flex;gap:8px;margin-bottom:14px}
+.modes button{flex:1;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--btn);color:var(--text);font-size:1rem;cursor:pointer}
+.modes button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+label{display:block;font-size:.85rem;color:var(--muted);margin-bottom:6px}
+input[type=number]{width:100%;font-size:1.6rem;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--btn);color:var(--text)}
+.note{font-size:.8rem;color:var(--muted);margin-top:6px;min-height:1.1em}
+.big{font-size:3rem;font-weight:700;margin:14px 0 2px;color:var(--accent)}
+.row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--line);font-size:.95rem}
+.row span:last-child{text-align:right}
+.stage{padding:0;overflow:hidden;display:flex;justify-content:center}
+svg{width:100%;height:auto;display:block}
+.sc{transition:opacity .8s}
+.tl{fill:#1b2230;font-size:11px;font-family:system-ui,sans-serif}
+.top{max-width:920px;margin:0 auto 16px}
+.top h2{font-size:1.2rem;margin:0 0 4px}
+.egrid{display:grid;gap:16px;grid-template-columns:1fr 1fr;align-items:center}
+@media(max-width:700px){.egrid{grid-template-columns:1fr}}
+input[type=range]{width:100%;margin:6px 0 10px;accent-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.chips button{padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--btn);color:var(--text);font-size:.8rem;cursor:pointer}
+#esvg{max-width:320px;margin:0 auto;cursor:crosshair;touch-action:none}
+.etxt{fill:var(--text);font-size:10px;font-family:system-ui,sans-serif}
+:root[data-theme="dark"]{--bg:linear-gradient(#070a12,#161c2e);--card:#10131fee;--text:#eef1f7;--muted:#9aa4b8;--line:#2a3050;--accent:#8fb0ff;--btn:#1a1f33;color-scheme:dark}
+[hidden]{display:none!important}
+.bar{max-width:920px;margin:0 auto 16px;display:flex;gap:10px;flex-wrap:wrap}
+.tabs{display:flex;gap:8px;flex:1;min-width:240px}
+.tabs button,.thm{padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:var(--btn);color:var(--text);font-size:1rem;cursor:pointer}
+.tabs button{flex:1}
+.tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+</style>
+</head>
+<body>
+<div class="bar">
+  <div class="tabs"><button id="tDyn" class="on">⚖️ Dinamometre</button><button id="tEarth">🌍 Dünyanın içi</button></div>
+  <button id="thm" class="thm">🌙 Koyu mod</button>
+</div>
+<div class="top card" id="secEarth" hidden>
+  <h2>🌍 Dünyanın içinde ağırlık</h2>
+  <p class="sub"><b>Başlangıç: ağırlık ekvatorda ölçülüyor</b>, yani yüzeyde, tam çekirdeğin üstünde duruyorsun. Ağırlığını N olarak yaz, sonra Dünya’nın içinde bir nokta seç (resme tıkla veya kaydır). Merkeze indikçe ağırlık değişir.</p>
+  <div class="egrid">
+    <div>
+      <label for="n0">Ekvatordaki ağırlık (N)</label>
+      <input id="n0" type="number" min="0" step="1" value="100" inputmode="decimal">
+      <label for="dep" style="margin-top:12px">Derinlik: <span id="depOut">0</span> km</label>
+      <input id="dep" type="range" min="0" max="6371" step="1" value="0">
+      <div class="chips"><button data-d="0">Ekvator</button><button data-d="2891">Manto tabanı</button><button data-d="5150">İç çekirdek sınırı</button><button data-d="6371">Merkez</button></div>
+      <div class="big"><span id="wOut">100</span> N</div>
+      
+      <div class="row"><span>Merkeze uzaklık</span><span id="rOut"></span></div>
+      <div class="row"><span>Yerçekimi (g)</span><span id="egOut"></span></div>
+      <div class="row"><span>Ekvatora göre değişim</span><span id="cOut"></span></div>
+      <div class="row"><span>Merkeze (mavi nokta) göre</span><span id="mOut"></span></div>
+    </div>
+    <svg id="esvg" viewBox="0 0 300 300" aria-label="Dünyanın kesiti">
+      <circle cx="150" cy="150" r="134" fill="#3f7fd0"/>
+      <circle cx="150" cy="150" r="130" fill="#b5693f"/>
+      
+      <circle cx="150" cy="150" r="6" fill="#2f6df6" stroke="#fff" stroke-width="2"/>
+      <line x1="150" y1="150" x2="280" y2="150" stroke="#fff" stroke-width="1" stroke-dasharray="4 3" opacity=".8"/>
+      
+      <text class="etxt" x="150" y="138" text-anchor="middle" style="fill:#fff">Merkez (referans)</text>
+      
+      <text class="etxt" x="272" y="140" text-anchor="end" style="fill:#fff">Ekvator (başlangıç)</text>
+      <circle id="emk" r="7" fill="#e5383b" stroke="#fff" stroke-width="2"/>
+    </svg>
+  </div>
+</div>
+<div class="wrap" id="secDyn">
+  <div class="card">
+    <h1>Sanal Dinamometre</h1>
+    <p class="sub">Kütleyi yaz, yay gerilsin. Ağırlık = kütle × yerçekimi.</p>
+    <div class="modes">
+      <button id="bEarth" class="on">🌍 Dünya</button>
+      <button id="bMoon">🌙 Ay</button>
+    </div>
+    <label for="kg">Kütle (kg)</label>
+    <input id="kg" type="number" min="0" max="10" step="0.1" value="5" inputmode="decimal">
+    <div class="note" id="note"></div>
+    <div class="big"><span id="nOut">0</span> N</div>
+    <div class="row"><span>Anlık gösterge</span><span id="live">0 N</span></div>
+    <div class="row"><span>Yerçekimi (g)</span><span id="gOut"></span></div>
+    <div class="row"><span>Formül</span><span id="fOut"></span></div>
+    <div class="row"><span>Karşılaştırma</span><span id="eOut"></span></div>
+  </div>
+  <div class="card stage">
+    <svg viewBox="0 0 320 660" aria-label="Dinamometre">
+      <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4aa8f5"/><stop offset="1" stop-color="#d9f0ff"/></linearGradient>
+        <radialGradient id="sun"><stop offset="0" stop-color="#fff6c2"/><stop offset=".5" stop-color="#ffe066"/><stop offset="1" stop-color="#ffe06600"/></radialGradient>
+        <radialGradient id="earthP" cx=".35" cy=".35"><stop offset="0" stop-color="#7fc4ff"/><stop offset="1" stop-color="#0b3c8c"/></radialGradient>
+        <linearGradient id="metal" x1="0" x2="1"><stop offset="0" stop-color="#7d8696"/><stop offset=".3" stop-color="#e9edf3"/><stop offset=".55" stop-color="#b9c0cc"/><stop offset="1" stop-color="#707989"/></linearGradient>
+        <linearGradient id="blk" x1="0" x2="1"><stop offset="0" stop-color="#2f3744"/><stop offset=".35" stop-color="#7b8696"/><stop offset=".7" stop-color="#4a5361"/><stop offset="1" stop-color="#262c37"/></linearGradient>
+        <linearGradient id="coil" x1="0" x2="1"><stop offset="0" stop-color="#6c7482"/><stop offset=".5" stop-color="#e3e7ee"/><stop offset="1" stop-color="#6c7482"/></linearGradient>
+        <linearGradient id="glass" x1="0" x2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e6e9ef"/></linearGradient>
+        <filter id="sh" x="-30%" y="-10%" width="170%" height="130%"><feDropShadow dx="3" dy="5" stdDeviation="4" flood-color="#000" flood-opacity=".35"/></filter>
+      </defs>
+      <g id="earthScene" class="sc">
+        <rect width="320" height="660" fill="url(#sky)"/>
+        <circle cx="262" cy="90" r="60" fill="url(#sun)"/>
+        <g fill="#fff" opacity=".9"><ellipse cx="70" cy="110" rx="34" ry="12"/><ellipse cx="92" cy="100" rx="24" ry="12"/><ellipse cx="240" cy="210" rx="30" ry="10"/><ellipse cx="258" cy="202" rx="20" ry="10"/><ellipse cx="40" cy="330" rx="26" ry="9"/></g>
+        <path d="M0 585 Q70 545 150 580 T320 565 L320 660 L0 660Z" fill="#5faa4a"/>
+        <path d="M0 615 Q100 595 200 612 T320 605 L320 660 L0 660Z" fill="#3f8f3a"/>
+        <rect y="636" width="320" height="24" fill="#6b4a2b"/>
+      </g>
+      <g id="moonScene" class="sc" opacity="0">
+        <rect width="320" height="660" fill="#04050b"/>
+        <g id="stars"></g>
+        <circle cx="255" cy="110" r="38" fill="url(#earthP)"/>
+        <path d="M240 96 q10-10 18 0 q4 10-6 14 q-10 0-12-14zM262 120 q10-2 14 8 q-4 12-14 6z" fill="#4d9b4a" opacity=".85"/>
+        <path d="M0 610 Q80 595 170 608 T320 600 L320 660 L0 660Z" fill="#8c8f98"/>
+        <rect y="632" width="320" height="28" fill="#6f727b"/>
+        <g fill="#5a5d66" opacity=".8"><ellipse cx="60" cy="620" rx="26" ry="5"/><ellipse cx="250" cy="618" rx="20" ry="4"/><ellipse cx="160" cy="646" rx="30" ry="6"/></g>
+      </g>
+      <rect x="95" y="0" width="120" height="8" rx="2" fill="#3b4250"/>
+      <g filter="url(#sh)">
+        <circle cx="155" cy="19" r="10" fill="none" stroke="url(#metal)" stroke-width="3.5"/>
+        <rect x="148" y="28" width="14" height="12" fill="url(#metal)"/>
+        <rect x="120" y="36" width="70" height="266" rx="12" fill="url(#metal)" stroke="#5f6877" stroke-width="1"/>
+        <rect x="130" y="48" width="50" height="244" rx="5" fill="url(#glass)" stroke="#69717f" stroke-width="1.5"/>
+        <g id="ticks"></g>
+        <path id="spring" fill="none" stroke="url(#coil)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+        <rect id="slider" x="130" width="50" height="3" fill="#e5383b"/>
+        <rect x="143" y="298" width="24" height="12" rx="3" fill="url(#metal)" stroke="#5f6877"/>
+      </g>
+      <g id="labels"></g>
+      <line id="rod" x1="155" x2="155" stroke="#8a93a3" stroke-width="3.5"/>
+      <circle id="ring" cx="155" r="7" fill="none" stroke="#8a93a3" stroke-width="3"/>
+      <line id="cord" x1="155" x2="155" stroke="#8a93a3" stroke-width="2.5"/>
+      <g id="mass" filter="url(#sh)">
+        <rect id="block" rx="5" fill="url(#blk)" stroke="#1d222b"/>
+        <rect id="plate" rx="3" fill="#d9dde4"/>
+        <text id="blockT" text-anchor="middle" fill="#1b2230" font-size="12" font-weight="700" font-family="system-ui,sans-serif"></text>
+      </g>
+    </svg>
+  </div>
+</div>
+<script>
+var G={earth:9.81,moon:1.62},mode="earth",pos=0,vel=0,target=0,M=5,MAXN=100,PX=2,Y0=62;
+var $=function(i){return document.getElementById(i)};
+var h="",lb="";
+for(var n=0;n<=100;n+=5){var y=Y0+n*PX,big=n%10===0,l=big?12:6;
+ h+='<line x1="132" x2="'+(132+l)+'" y1="'+y+'" y2="'+y+'" stroke="#444c5a" stroke-width="'+(big?1.4:.8)+'"/><line x1="178" x2="'+(178-l)+'" y1="'+y+'" y2="'+y+'" stroke="#444c5a" stroke-width="'+(big?1.4:.8)+'"/>';
+ if(big)lb+='<text class="tl" x="196" y="'+(y+4)+'" style="fill:#1b2230;paint-order:stroke;stroke:#ffffffaa;stroke-width:3px">'+n+' N</text>';}
+$("ticks").innerHTML=h;$("labels").innerHTML=lb;
+var st="";for(var i=0;i<70;i++){st+='<circle cx="'+(Math.random()*320).toFixed(0)+'" cy="'+(Math.random()*560).toFixed(0)+'" r="'+(Math.random()*1.3+.3).toFixed(1)+'" fill="#fff" opacity="'+(Math.random()*.6+.3).toFixed(2)+'"/>';}
+$("stars").innerHTML=st;
+function fmt(x){return (Math.round(x*100)/100).toString().replace(".",",")}
+function update(){
+  var m=parseFloat($("kg").value.replace(",","."));if(isNaN(m)||m<0)m=0;
+  $("note").textContent="";
+  if(m>10){m=10;$("note").textContent="Dinamometre en fazla 10 kg ölçer."}
+  M=m;var N=m*G[mode];target=N/MAXN*(100*PX);
+  $("nOut").textContent=fmt(N);
+  $("gOut").textContent=fmt(G[mode])+" m/s²";
+  $("fOut").textContent=fmt(m)+" × "+fmt(G[mode])+" = "+fmt(N)+" N";
+  $("eOut").textContent=mode==="moon"?"Dünyada "+fmt(m*G.earth)+" N (yaklaşık 6 kat)":"Ayda "+fmt(m*G.moon)+" N (yaklaşık 6 kat az)";
+  $("blockT").textContent=fmt(m)+" kg";
+}
+function render(){
+  var sy=Y0+pos,d="M155 52",k=18,top=52,bot=sy-4,step=(bot-top)/k;
+  for(var i=1;i<k;i++)d+=" L"+(i%2?147:163)+" "+(top+step*i).toFixed(1);
+  d+=" L155 "+bot.toFixed(1);
+  $("spring").setAttribute("d",d);
+  $("slider").setAttribute("y",sy-1.5);
+  $("rod").setAttribute("y1",sy);$("rod").setAttribute("y2",324+pos);
+  $("ring").setAttribute("cy",331+pos);
+  var on=M>0.001;
+  var w=40+M*5,hh=32+M*5,by=360+pos;
+  $("cord").setAttribute("y1",338+pos);$("cord").setAttribute("y2",by);
+  var b=$("block");b.setAttribute("x",155-w/2);b.setAttribute("y",by);b.setAttribute("width",w);b.setAttribute("height",hh);
+  var p=$("plate");p.setAttribute("x",155-w/2+6);p.setAttribute("y",by+hh/2-9);p.setAttribute("width",w-12);p.setAttribute("height",18);
+  var t=$("blockT");t.setAttribute("x",155);t.setAttribute("y",by+hh/2+4);
+  $("mass").style.display=on?"":"none";$("cord").style.display=on?"":"none";$("ring").style.display=on?"":"none";
+  $("live").textContent=fmt(Math.max(0,pos/PX))+" N";
+}
+var last=0;
+function loop(t){
+  var dt=Math.min(.03,(t-last)/1000||0);last=t;
+  var mm=Math.max(M,.15)+.1,a=-(260/mm)*(pos-target)-(9/mm)*vel;
+  vel+=a*dt;pos+=vel*dt;
+  if(pos<0){pos=0;vel=Math.abs(vel)*.3}
+  if(Math.abs(pos-target)<.03&&Math.abs(vel)<.3){pos=target;vel=0}
+  render();requestAnimationFrame(loop);
+}
+function setMode(m){
+  mode=m;document.documentElement.setAttribute("data-mode",m);
+  $("bEarth").classList.toggle("on",m==="earth");$("bMoon").classList.toggle("on",m==="moon");
+  $("earthScene").style.opacity=m==="earth"?1:0;$("moonScene").style.opacity=m==="moon"?1:0;
+  vel=0;update();
+}
+$("bEarth").onclick=function(){setMode("earth")};
+$("bMoon").onclick=function(){setMode("moon")};
+$("kg").addEventListener("input",update);
+update();requestAnimationFrame(loop);
+/* Dünyanın içi */
+var RT=[[0,0],[1221.5,4.4],[3480,10.68],[5701,9.98],[6371,9.78]],RE=6371,G0=9.78,mx=280,my=150;
+function gAt(r){r=Math.max(0,Math.min(RE,r));for(var i=1;i<RT.length;i++){if(r<=RT[i][0]){var a=RT[i-1],b=RT[i];return a[1]+(b[1]-a[1])*(r-a[0])/(b[0]-a[0])}}return G0}
+function lay(r){return r<=1221.5?"İç çekirdek":r<=3480?"Dış çekirdek":r<=RE-35?"Manto":"Yer kabuğu"}
+function km(x){return Math.round(x).toLocaleString("tr-TR")+" km"}
+function eUpd(){
+  var n0=parseFloat($("n0").value.replace(",","."));if(isNaN(n0)||n0<0)n0=0;
+  var dx=mx-150,dy=my-150,r=Math.min(1,Math.sqrt(dx*dx+dy*dy)/130)*RE,g=gAt(r),w=n0*g/G0,c=(g/G0-1)*100;
+  $("emk").setAttribute("cx",mx);$("emk").setAttribute("cy",my);
+  $("dep").value=Math.round(RE-r);$("depOut").textContent=Math.round(RE-r).toLocaleString("tr-TR");
+  $("wOut").textContent=fmt(w);$("rOut").textContent=km(r);
+  $("egOut").textContent=fmt(g)+" m/s²";
+  $("cOut").textContent=(c>=0?"+":"")+fmt(c).replace("-","−")+" %";
+  $("mOut").textContent=w<0.005?"Merkezle aynı nokta: 0 N":"+"+fmt(w)+" N fazla (merkezde 0 N)";
+}
+function eDepth(d){var r=RE-d;mx=150+r/RE*130;my=150;eUpd()}
+$("n0").addEventListener("input",eUpd);
+$("dep").addEventListener("input",function(){eDepth(+this.value)});
+var chips=document.querySelectorAll(".chips button");
+for(var ci=0;ci<chips.length;ci++)chips[ci].onclick=function(){eDepth(+this.getAttribute("data-d"))};
+function ePick(e){var s=$("esvg"),b=s.getBoundingClientRect(),x=(e.clientX-b.left)*300/b.width,y=(e.clientY-b.top)*300/b.height,dx=x-150,dy=y-150,d=Math.sqrt(dx*dx+dy*dy);if(d>130){dx*=130/d;dy*=130/d}mx=150+dx;my=150+dy;eUpd()}
+var drag=false,es=$("esvg");
+es.addEventListener("pointerdown",function(e){drag=true;ePick(e)});
+es.addEventListener("pointermove",function(e){if(drag)ePick(e)});
+window.addEventListener("pointerup",function(){drag=false});
+function tab(t){var d=t==="dyn";$("secDyn").hidden=!d;$("secEarth").hidden=d;$("tDyn").classList.toggle("on",d);$("tEarth").classList.toggle("on",!d)}
+$("tDyn").onclick=function(){tab("dyn")};
+$("tEarth").onclick=function(){tab("earth")};
+function theme(t){document.documentElement.setAttribute("data-theme",t);$("thm").textContent=t==="dark"?"☀️ Açık mod":"🌙 Koyu mod"}
+$("thm").onclick=function(){theme(document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark")};
+theme(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");
+eUpd();
+</script>
+</body>
+</html>
